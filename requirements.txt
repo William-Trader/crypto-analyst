@@ -1,0 +1,5 @@
+# crypto-analyst 依赖（服务器）
+qq-botpy>=1.2.0
+fastapi>=0.110
+uvicorn>=0.27
+apscheduler>=3.10
