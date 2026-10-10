@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>🐕 比格世界 · 加密分析地图</title>
+<style>
+/* ============ 设计系统：像素 × 科技 × Kimi ============ */
+:root{
+  --bg:#0b0e1a; --bg2:#0e1226; --panel:#121731; --panel2:#171e3d;
+  --line:#262f56; --line2:#3a4477;
+  --cyan:#22d3ee; --green:#6ef57a; --purple:#7c6cff; --orange:#ffb84d; --red:#ff6c6c;
+  --text:#dbe4ff; --dim:#6b76a8; --yellow:#ffd75e;
+  --px:4px;
+}
+*{margin:0;padding:0;box-sizing:border-box;image-rendering:pixelated;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:'Courier New','Menlo',monospace;font-size:13px;}
+/* 像素字体标题 */
+.px-title{font-size:20px;letter-spacing:3px;color:#fff;
+  text-shadow:3px 0 0 var(--purple),0 3px 0 var(--cyan),6px 6px 0 rgba(0,0,0,.6);}
+/* CRT 扫描线 */
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.015) 0 1px,transparent 1px 3px);}
+/* HUD */
+.hud{position:fixed;top:0;left:0;right:0;height:52px;z-index:50;display:flex;align-items:center;gap:14px;
+  padding:0 16px;background:linear-gradient(180deg,rgba(14,18,38,.96),rgba(11,14,26,.85));
+  border-bottom:3px solid var(--line2);box-shadow:0 4px 20px rgba(0,0,0,.5);backdrop-filter:blur(4px);}
+.badge{padding:3px 10px;border:2px solid var(--line2);background:var(--bg2);font-size:12px;letter-spacing:1px;}
+.badge .dot{display:inline-block;width:8px;height:8px;margin-right:6px;background:var(--green);
+  box-shadow:0 0 8px var(--green);animation:blink 2s infinite;}
+@keyframes blink{50%{opacity:.4}}
+.senti{display:flex;align-items:center;gap:8px;padding:3px 12px;border:2px solid var(--purple);
+  background:rgba(124,108,255,.12);box-shadow:0 0 14px rgba(124,108,255,.35);}
+.senti .bar{width:90px;height:8px;background:var(--bg);border:1px solid var(--line2);position:relative;overflow:hidden;}
+.senti .bar i{position:absolute;left:0;top:0;bottom:0;transition:width .8s,background .8s;}
+.src{font-size:11px;color:var(--dim);display:flex;gap:10px;}
+.src b{color:var(--text);font-weight:normal;}
+.spacer{flex:1}
+.clock{color:var(--yellow);font-size:12px;}
+/* ============ 地图（全屏自适应，无需滚动） ============ */
+#map{position:fixed;top:52px;left:0;right:0;bottom:0;overflow:hidden;background:
+  radial-gradient(1200px 600px at 20% 10%,#101530 0%,transparent 60%),
+  radial-gradient(900px 500px at 80% 90%,#101530 0%,transparent 60%),var(--bg);}
+#world{position:absolute;left:50%;top:50%;transform-origin:center center;}
+/* 背景装饰 */
+.grass{position:absolute;inset:0;background:
+  repeating-linear-gradient(0deg,transparent 0 46px,rgba(38,47,86,.25) 46px 48px),
+  repeating-linear-gradient(90deg,transparent 0 46px,rgba(38,47,86,.25) 46px 48px);}
+.tree{position:absolute;width:26px;height:40px;}
+.tree .t1{position:absolute;bottom:14px;left:2px;width:22px;height:24px;background:#1d4a3a;border:3px solid #0a0e1e;
+  clip-path:polygon(50% 0,100% 100%,0 100%);box-shadow:0 0 12px rgba(30,120,80,.3);}
+.tree .t2{position:absolute;bottom:6px;left:8px;width:10px;height:14px;background:#5c3a1e;border:2px solid #0a0e1e;}
+.lamp{position:absolute;width:14px;height:34px;}
+.lamp .p{position:absolute;top:0;left:2px;width:10px;height:12px;background:var(--cyan);
+  border:2px solid #0a0e1e;box-shadow:0 0 12px var(--cyan);opacity:.8;animation:blink 3.5s infinite;}
+.lamp .s{position:absolute;top:14px;left:5px;width:4px;height:16px;background:#333a60;border:2px solid #0a0e1e;}
+/* 数据塔（装饰） */
+.tower{position:absolute;width:30px;height:90px;}
+.tower .b{position:absolute;bottom:0;left:6px;width:18px;height:80px;background:#1b2142;border:3px solid #0a0e1e;}
+.tower .a{position:absolute;top:4px;left:2px;width:26px;height:18px;background:#121731;border:3px solid #0a0e1e;}
+.tower .l{position:absolute;top:30px;left:10px;width:10px;height:6px;background:var(--cyan);
+  border:2px solid #0a0e1e;box-shadow:0 0 10px var(--cyan);animation:blink 1.8s infinite;}
+.tower .l2{top:46px;animation-delay:.5s;background:var(--purple);box-shadow:0 0 10px var(--purple);}
+/* ============ 建筑（设施） ============ */
+.bld{position:absolute;z-index:5;cursor:pointer;user-select:none;
+  transition:filter .2s;filter:brightness(.92);}
+.bld:hover{filter:brightness(1.12);z-index:8;}
+.bld .sign{position:absolute;top:-34px;left:50%;transform:translateX(-50%);white-space:nowrap;
+  font-size:13px;letter-spacing:2px;color:#fff;text-shadow:2px 2px 0 #000,0 0 12px var(--cyan);}
+.bld .roof{position:absolute;top:-12px;left:-6px;right:-6px;height:14px;background:linear-gradient(90deg,var(--cyan),var(--purple));
+  border:3px solid #0a0e1e;box-shadow:0 0 16px rgba(34,211,238,.5);}
+.bld .body{position:absolute;inset:0;background:linear-gradient(180deg,#1b2142,#121731);
+  border:3px solid #0a0e1e;box-shadow:0 0 0 2px var(--line2),0 14px 30px rgba(0,0,0,.6),inset 0 0 40px rgba(34,211,238,.06);}
+.bld .win{position:absolute;width:26px;height:18px;background:#0b1a33;border:2px solid #0a0e1e;transition:background .5s;}
+.bld .win.on{background:var(--cyan);box-shadow:0 0 10px var(--cyan);}
+.bld .win.purple.on{background:var(--purple);box-shadow:0 0 10px var(--purple);}
+.bld .win.green.on{background:var(--green);box-shadow:0 0 10px var(--green);}
+.bld .door{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:34px;height:44px;
+  background:#0a0e1e;border:3px solid #0a0e1e;}
+.bld .door::after{content:'';position:absolute;top:6px;left:4px;width:6px;height:6px;background:var(--yellow);
+  box-shadow:0 0 8px var(--yellow);}
+.bld .mini{position:absolute;bottom:6px;right:6px;font-size:10px;color:var(--dim);letter-spacing:1px;}
+.bld .mini b{color:var(--green);}
+/* ===== 建筑精细化外观（按职能） ===== */
+.bld{box-shadow:0 18px 40px rgba(0,0,0,.65);}
+.bld .body{overflow:hidden;}
+.bld .roof{height:16px;background:linear-gradient(90deg,var(--cyan),var(--purple));}
+/* 数据中心：服务器机架 */
+.bld.g-data .rack{position:absolute;top:18px;left:12px;right:12px;bottom:52px;display:flex;flex-direction:column;gap:5px;}
+.bld.g-data .rack .u{flex:1;background:#0d1226;border:2px solid #0a0e1e;position:relative;}
+.bld.g-data .rack .u::after{content:'';position:absolute;top:3px;right:4px;width:8px;height:8px;border-radius:2px;
+  background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 1.6s infinite;}
+.bld.g-data .rack .u:nth-child(2)::after{animation-delay:.4s;background:var(--cyan);box-shadow:0 0 8px var(--cyan);}
+.bld.g-data .rack .u:nth-child(3)::after{animation-delay:.8s;}
+.bld.g-data .rack .u:nth-child(4)::after{animation-delay:1.2s;}
+.bld.g-data .vent{position:absolute;top:10px;left:12px;right:12px;height:5px;
+  background:repeating-linear-gradient(90deg,#1b2142 0 4px,#0a0e1e 4px 6px);border:1px solid #0a0e1e;}
+/* 分析中心：巨型图表屏 */
+.bld.g-screen .bigwin{top:16px;left:12px;right:12px;width:auto;transform:none;height:78px;background:#060b18;
+  border:3px solid #0a0e1e;box-shadow:inset 0 0 26px rgba(34,211,238,.2),0 0 16px rgba(34,211,238,.3);}
+.bld.g-screen .bigwin .line{position:absolute;left:8px;right:8px;bottom:18px;height:26px;overflow:hidden;}
+.bld.g-screen .bigwin .line i{position:absolute;bottom:0;width:5px;background:var(--green);border:1px solid #0a0e1e;
+  animation:chartbar 2.4s ease-in-out infinite alternate;}
+.bld.g-screen .bigwin .line i:nth-child(2){animation-delay:.3s;background:var(--cyan);}
+.bld.g-screen .bigwin .line i:nth-child(3){animation-delay:.6s;}
+.bld.g-screen .bigwin .line i:nth-child(4){animation-delay:.9s;background:var(--red);}
+.bld.g-screen .bigwin .line i:nth-child(5){animation-delay:1.2s;}
+.bld.g-screen .bigwin .line i:nth-child(6){animation-delay:1.5s;background:var(--purple);}
+.bld.g-screen .bigwin .line i:nth-child(7){animation-delay:1.8s;}
+.bld.g-screen .bigwin .line i:nth-child(8){animation-delay:2.1s;background:var(--yellow);}
+@keyframes chartbar{from{height:20%}to{height:90%}}
+.bld.g-screen .tick{position:absolute;top:2px;right:6px;font-size:9px;color:var(--green);letter-spacing:1px;}
+/* 雷达站：抛物面+扫描 */
+.bld.g-radar .radar-dish{top:-34px;width:44px;height:26px;right:8px;}
+.bld.g-radar .sweep{position:absolute;top:12px;left:12px;width:56px;height:56px;border-radius:50%;
+  border:2px solid rgba(255,184,77,.4);overflow:hidden;}
+.bld.g-radar .sweep::before{content:'';position:absolute;inset:0;
+  background:conic-gradient(from 0deg, rgba(255,184,77,.5), transparent 60deg);animation:radar 2.4s linear infinite;}
+.bld.g-radar .sweep::after{content:'';position:absolute;inset:8px;border-radius:50%;border:1px solid rgba(255,184,77,.3);}
+@keyframes radar{to{transform:rotate(360deg)}}
+.bld.g-radar .blip{position:absolute;width:5px;height:5px;background:var(--orange);border:1px solid #0a0e1e;
+  box-shadow:0 0 8px var(--orange);border-radius:50%;animation:blink 1.8s infinite;}
+/* 瞭望台：天文台 + 望远镜 */
+.bld.g-obs .dome{top:-40px;width:120px;height:48px;}
+.bld.g-obs .dome::after{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:34px;height:14px;background:#0a0e1e;border-radius:4px;box-shadow:inset 0 0 8px var(--cyan);}
+.bld.g-obs .scope{position:absolute;top:-16px;right:16px;width:34px;height:12px;background:#2a3058;
+  border:2px solid #0a0e1e;transform:rotate(-18deg);box-shadow:0 0 10px rgba(124,108,255,.5);}
+.bld.g-obs .scope::after{content:'';position:absolute;right:-6px;top:-3px;width:10px;height:10px;border-radius:50%;
+  background:var(--cyan);box-shadow:0 0 10px var(--cyan);}
+.bld.g-obs .eye{position:absolute;top:30px;left:12px;width:26px;height:20px;background:#060b18;border:2px solid #0a0e1e;
+  border-radius:50% 50% 0 0;box-shadow:inset 0 0 12px rgba(124,108,255,.6);}
+/* 合议厅：八柱 + 天平 */
+.bld.g-council .cols{position:absolute;top:16px;left:10px;right:10px;bottom:50px;display:flex;gap:6px;justify-content:center;align-items:flex-end;}
+.bld.g-council .cols .c{width:12px;background:linear-gradient(180deg,#3a4477,#232a4e);border:2px solid #0a0e1e;}
+.bld.g-council .cols .c:nth-child(1){height:60%;background:linear-gradient(180deg,#6ef57a,#2e8b57);}
+.bld.g-council .cols .c:nth-child(2){height:85%;background:linear-gradient(180deg,#6ef57a,#2e8b57);}
+.bld.g-council .cols .c:nth-child(3){height:45%;}
+.bld.g-council .cols .c:nth-child(4){height:70%;background:linear-gradient(180deg,#ff6c6c,#b03a3a);}
+.bld.g-council .cols .c:nth-child(5){height:55%;}
+.bld.g-council .cols .c:nth-child(6){height:40%;}
+.bld.g-council .cols .c:nth-child(7){height:75%;background:linear-gradient(180deg,#6ef57a,#2e8b57);}
+.bld.g-council .cols .c:nth-child(8){height:50%;}
+.bld.g-council .cols .c i{display:block;width:100%;height:3px;background:#0a0e1e;}
+.bld.g-council .bench{position:absolute;bottom:46px;left:8px;right:8px;height:5px;background:#3a4477;border:2px solid #0a0e1e;}
+/* 作战室：沙盘 + 箭头 */
+.bld.g-war .map2{position:absolute;top:16px;left:12px;right:12px;height:72px;background:#0d1226;border:2px solid #0a0e1e;
+  background-image:repeating-linear-gradient(0deg,transparent 0 12px,rgba(34,211,238,.12) 12px 13px),
+  repeating-linear-gradient(90deg,transparent 0 12px,rgba(34,211,238,.12) 12px 13px);}
+.bld.g-war .map2 .ar{position:absolute;left:8px;top:50%;width:0;height:0;border-top:7px solid transparent;
+  border-bottom:7px solid transparent;border-left:16px solid var(--red);filter:drop-shadow(0 0 4px var(--red));
+  animation:arrowmove 3s ease-in-out infinite;}
+.bld.g-war .map2 .ar.g{left:auto;right:10px;border-left:none;border-right:16px solid var(--green);
+  filter:drop-shadow(0 0 4px var(--green));animation-delay:1.5s;}
+@keyframes arrowmove{0%,100%{transform:translateX(0)}50%{transform:translateX(8px)}}
+.bld.g-war .pins{position:absolute;top:20px;left:22px;width:6px;height:6px;background:var(--yellow);border:1px solid #0a0e1e;border-radius:50%;
+  box-shadow:0 0 6px var(--yellow);}
+.bld.g-war .pins.p2{left:auto;right:30px;top:44px;background:var(--purple);box-shadow:0 0 6px var(--purple);}
+/* 总部：钟楼 */
+.bld.g-hq .clock2{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:26px;height:26px;border-radius:50%;
+  background:#0d1226;border:3px solid #0a0e1e;box-shadow:0 0 10px rgba(255,215,94,.3);}
+.bld.g-hq .clock2::before{content:'';position:absolute;top:50%;left:50%;width:2px;height:8px;background:var(--yellow);
+  transform-origin:50% 0;animation:tick 4s steps(60) infinite;}
+.bld.g-hq .clock2::after{content:'';position:absolute;top:50%;left:50%;width:2px;height:5px;background:var(--yellow);
+  transform-origin:50% 0;animation:tick 24s steps(60) infinite;}
+@keyframes tick{to{transform:rotate(360deg)}}
+/* 实验室：管道 + 冒泡 */
+.bld.g-lab .pipe{position:absolute;top:14px;left:12px;right:12px;height:8px;background:#232a4e;border:2px solid #0a0e1e;}
+.bld.g-lab .pipe::after{content:'';position:absolute;top:1px;left:10px;width:6px;height:3px;background:var(--green);
+  box-shadow:0 0 6px var(--green);animation:flow 2s linear infinite;}
+@keyframes flow{from{left:10px}to{left:calc(100% - 16px)}}
+.bld.g-lab .bubble{position:absolute;bottom:56px;left:34px;width:5px;height:5px;border-radius:50%;
+  background:rgba(124,108,255,.7);box-shadow:0 0 6px var(--purple);animation:rise 2.6s ease-in infinite;}
+.bld.g-lab .bubble.b2{left:56px;animation-delay:1.2s;}
+.bld.g-lab .bubble.b3{left:78px;animation-delay:.6s;background:rgba(34,211,238,.6);box-shadow:0 0 6px var(--cyan);}
+@keyframes rise{from{transform:translateY(0);opacity:1}to{transform:translateY(-52px);opacity:0}}
+/* 建筑地面投影 */
+.bld::after{content:'';position:absolute;left:6px;right:6px;bottom:-14px;height:14px;
+  background:radial-gradient(50% 100% at 50% 0, rgba(0,0,0,.5), transparent);}
+/* 灯牌霓虹 */
+.bld .sign{text-shadow:2px 2px 0 #000,0 0 14px var(--cyan);}
+.bld.g-hq .sign{text-shadow:2px 2px 0 #000,0 0 14px var(--yellow);}
+.bld.g-lab .sign{text-shadow:2px 2px 0 #000,0 0 14px var(--purple);}
+.bld.g-radar .sign{text-shadow:2px 2px 0 #000,0 0 14px var(--orange);}
+/* 建筑外部缩略数据面板 */
+.miniPanel{position:absolute;bottom:-34px;left:50%;transform:translateX(-50%);white-space:nowrap;
+  background:rgba(11,14,26,.92);border:2px solid var(--line2);box-shadow:0 0 0 1px #0a0e1e,0 0 12px rgba(0,0,0,.6);
+  font-size:10px;padding:3px 8px;z-index:6;letter-spacing:0.5px;}
+.miniPanel b{color:var(--green);}
+.miniPanel .r{color:var(--red);} .miniPanel .y{color:var(--yellow);} .miniPanel .c{color:var(--cyan);}
+.bld:hover .miniPanel{border-color:var(--cyan);box-shadow:0 0 0 1px #0a0e1e,0 0 14px rgba(34,211,238,.4);}
+/* 进入脉冲 */
+.bld.entering .body{animation:enterPulse .5s;}
+@keyframes enterPulse{50%{box-shadow:0 0 0 3px var(--purple),0 0 40px var(--purple);}}
+/* ============ 比格 ============ */
+#dogWrap{position:absolute;z-index:20;}
+#dog{display:block;}
+.speech{position:fixed;z-index:60;background:#fffdf0;color:#222;font-size:12px;padding:6px 10px;
+  border:3px solid #000;box-shadow:4px 4px 0 #000;max-width:300px;transition:opacity .2s;}
+.speech::after{content:'';position:absolute;bottom:-9px;left:20px;border:5px solid transparent;border-top:9px solid #000;}
+/* ============ 设施全屏界面 ============ */
+.fac{position:fixed;inset:0;z-index:100;background:var(--bg);display:none;
+  animation:facIn .35s steps(8);}
+.fac.open{display:flex;flex-direction:column;}
+@keyframes facIn{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0)}}
+.fac .top{height:48px;display:flex;align-items:center;gap:12px;padding:0 14px;
+  background:var(--panel);border-bottom:3px solid var(--line2);}
+.fac .top .t{font-size:15px;letter-spacing:2px;color:#fff;text-shadow:2px 2px 0 var(--purple);}
+.back-btn{padding:4px 12px;border:2px solid var(--line2);background:var(--bg2);color:var(--text);
+  cursor:pointer;font-family:inherit;font-size:12px;}
+.back-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.fac .content{flex:1;overflow-y:auto;padding:14px;position:relative;}
+.fac .content::-webkit-scrollbar{width:8px}
+.fac .content::-webkit-scrollbar-thumb{background:var(--line2)}
+/* 组件 */
+.panel2{background:var(--panel);border:2px solid var(--line2);box-shadow:0 0 0 1px #0a0e1e,0 6px 18px rgba(0,0,0,.4);
+  padding:12px;margin-bottom:12px;}
+.panel2 h3{font-size:12px;color:var(--cyan);letter-spacing:2px;margin-bottom:10px;border-bottom:2px solid var(--line);padding-bottom:6px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th,td{padding:5px 8px;text-align:left;border-bottom:1px solid var(--line);}
+th{color:var(--dim);font-size:11px;letter-spacing:1px;}
+tbody tr{cursor:pointer;} tbody tr:hover{background:var(--panel2);}
+.green{color:var(--green)} .red{color:var(--red)} .yellow{color:var(--yellow)} .dim{color:var(--dim)} .cyan{color:var(--cyan)}
+.pbtn{padding:5px 14px;border:3px solid #0a0e1e;background:linear-gradient(180deg,var(--purple),#5a4ce0);
+  color:#fff;cursor:pointer;font-family:inherit;font-size:12px;letter-spacing:1px;
+  box-shadow:3px 3px 0 #000;transition:transform .05s;}
+.pbtn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000;}
+.pbtn.cyan{background:linear-gradient(180deg,var(--cyan),#1a9cb8);}
+.pbtn.green{background:linear-gradient(180deg,var(--green),#2e8b57);}
+input,select{background:var(--bg2);border:2px solid var(--line2);color:var(--text);font-family:inherit;
+  padding:5px 8px;font-size:12px;}
+/* 计算过程 */
+.calc{background:var(--bg2);border:2px solid var(--line2);padding:10px;margin:8px 0;}
+.calc .f{color:var(--dim);font-size:11px;margin-bottom:6px;}
+.calc .st{color:var(--text);font-size:12px;line-height:1.8;padding-left:10px;border-left:3px solid var(--purple);margin:3px 0;}
+.calc .res{color:var(--green);font-size:14px;font-weight:bold;margin-top:6px;}
+.calc .int{color:var(--yellow);font-size:11px;}
+/* 情绪仪表 */
+.gauge{width:140px;height:140px;border-radius:50%;border:4px solid var(--line2);position:relative;
+  display:flex;align-items:center;justify-content:center;background:var(--bg2);}
+.gauge .val{font-size:28px;color:#fff;text-shadow:0 0 12px var(--cyan);}
+.gauge .lbl{position:absolute;bottom:8px;font-size:11px;color:var(--dim);}
+.barx{height:10px;background:var(--bg2);border:1px solid var(--line2);overflow:hidden;position:relative;}
+.barx i{position:absolute;left:0;top:0;bottom:0;transition:width .6s;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.kv{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--line);font-size:12px;}
+.kv b{color:#fff;}
+/* 雷达 */
+.sig{display:flex;align-items:center;gap:10px;padding:8px 10px;border:2px solid var(--line2);
+  background:var(--bg2);margin:6px 0;cursor:pointer;}
+.sig:hover{border-color:var(--cyan);box-shadow:0 0 12px rgba(34,211,238,.2);}
+/* 蜡烛图 */
+#candles{width:100%;height:360px;background:var(--bg2);border:2px solid var(--line2);}
+.legend{display:flex;gap:12px;margin-top:8px;font-size:11px;}
+.legend span{cursor:pointer;padding:2px 8px;border:1px solid var(--line2);}
+.legend .on{color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 8px rgba(34,211,238,.3);}
+.legend .off{color:var(--dim);}
+/* 成果浮层 */
+.overlay{position:fixed;top:64px;right:14px;bottom:14px;width:440px;z-index:150;display:none;
+  background:var(--panel);border:2px solid var(--line2);box-shadow:0 0 0 1px #0a0e1e,-6px 0 30px rgba(0,0,0,.6);
+  flex-direction:column;animation:slideIn .25s steps(6);}
+.overlay.open{display:flex;}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+.overlay .ot{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:2px solid var(--line2);}
+.overlay .ot .t{font-size:14px;letter-spacing:2px;color:#fff;flex:1;}
+.overlay .oc{flex:1;overflow-y:auto;padding:12px;}
+.overlay .oc::-webkit-scrollbar{width:8px}.overlay .oc::-webkit-scrollbar-thumb{background:var(--line2)}
+/* 建筑工作态 */
+.bld.working .body{box-shadow:0 0 0 2px var(--purple),0 0 30px rgba(124,108,255,.4),inset 0 0 40px rgba(34,211,238,.08);}
+.bld.working .sign{color:var(--yellow);}
+.workbar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:40;
+  background:rgba(11,14,26,.9);border:2px solid var(--line2);padding:6px 16px;font-size:12px;
+  display:flex;gap:14px;align-items:center;box-shadow:0 0 20px rgba(0,0,0,.6);}
+.workbar .cur{color:var(--cyan);letter-spacing:1px;}
+.workbar .next{color:var(--dim);}
+#toast{position:fixed;top:64px;right:16px;z-index:200;background:#000;color:var(--yellow);
+  border:2px solid var(--yellow);padding:6px 12px;font-size:12px;display:none;box-shadow:4px 4px 0 rgba(0,0,0,.5);}
+/* 情绪天气 */
+#map::before{content:'';position:fixed;inset:52px 0 0 0;pointer-events:none;z-index:3;transition:background 1.2s;}
+body.mood-panic #map::before{background:radial-gradient(60% 50% at 50% 40%,rgba(255,80,80,.14),transparent);}
+body.mood-cautious #map::before{background:radial-gradient(60% 50% at 50% 40%,rgba(255,184,77,.08),transparent);}
+body.mood-calm #map::before{background:transparent;}
+body.mood-happy #map::before{background:radial-gradient(60% 50% at 50% 40%,rgba(110,245,122,.08),transparent);}
+body.mood-excited #map::before{background:radial-gradient(60% 50% at 50% 40%,rgba(124,108,255,.16),transparent);}
+/* 日夜循环 */
+body.night #map{background:radial-gradient(1200px 600px at 20% 10%,#0a0e20 0%,transparent 60%),
+  radial-gradient(900px 500px at 80% 90%,#0a0e20 0%,transparent 60%),#070a18;}
+body.night .stars{opacity:1;}
+body:not(.night) .stars{opacity:.75;}
+body.night .bld .win{filter:brightness(1.25);}
+body.night .lamp .p{opacity:1;}
+body.night .building .win{filter:brightness(1.2);}
+body.night .grass{opacity:.55;}
+/* 天气雨 */
+body.weather-rain #map::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:4;
+  background:repeating-linear-gradient(105deg,transparent 0 14px,rgba(120,160,255,.07) 14px 15px);
+  animation:rainmove .5s linear infinite;}
+@keyframes rainmove{from{background-position:0 0}to{background-position:-20px 40px}}
+body.weather-storm #map::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:4;
+  background:repeating-linear-gradient(105deg,transparent 0 10px,rgba(160,190,255,.12) 10px 11px);
+  animation:rainmove .35s linear infinite;}
+body.weather-storm{filter:brightness(.95);}
+#weatherBadge{font-size:12px;}
+</style>
+</head>
+<body>
+
+<!-- HUD -->
+<div class="hud">
+  <div class="px-title">🐕 比格世界</div>
+  <span class="badge"><span class="dot"></span><span id="beagleState">待命</span></span>
+  <div class="senti"><span id="sentiLbl">市场情绪: --</span><span class="bar"><i id="sentiBar" style="width:50%;background:var(--dim)"></i></span><span id="sentiEmoji">🐕</span></div>
+  <span class="badge" id="fgiBadge" style="border-color:var(--orange);color:var(--orange)">FGI: --</span>
+  <span class="badge" id="verdictBadge" style="border-color:var(--purple);color:#fff">Verdict: --</span>
+  <span class="badge" id="weatherBadge" style="border-color:var(--cyan);color:var(--cyan)">🌤</span>
+  <span class="badge" id="regimeBadge" style="border-color:var(--green);color:var(--green)">Regime: --</span>
+  <span class="badge" id="anomalyBadge" style="border-color:var(--line2);color:var(--dim)">🔍 正常</span>
+  <div class="src" id="srcStatus">源: --</div>
+  <div class="spacer"></div>
+  <span class="clock" id="clock"></span>
+</div>
+
+<!-- 地图 -->
+<div id="map">
+  <div id="world">
+    <div class="grass"></div>
+    <div id="decor"></div>
+    <div id="blds"></div>
+    <div id="dogWrap"><canvas id="dog" width="96" height="88"></canvas></div>
+  </div>
+</div>
+<div id="speech" class="speech" style="display:none"></div>
+
+<!-- 设施界面模板（JS 填充） -->
+<div class="fac" id="fac"><div class="top">
+  <button class="back-btn" onclick="exitFac()">◀ 返回地图</button>
+  <div class="t" id="facTitle">设施</div>
+  <div class="spacer"></div>
+  <div class="dim" id="facHint"></div>
+</div><div class="content" id="facContent"></div></div>
+
+<!-- 成果浮层 -->
+<div class="overlay" id="overlay"><div class="ot">
+  <span class="t" id="ovTitle">设施</span>
+  <span class="dim" id="ovHint" style="font-size:11px"></span>
+  <button class="back-btn" onclick="closeOv()">✕ 关闭</button>
+</div><div class="oc" id="ovContent"></div></div>
+
+<!-- 工作状态条 -->
+<div class="workbar" id="workbar"><span>🐕 比格日程</span><span class="cur" id="wbCur">--</span>
+  <span>→</span><span class="next" id="wbNext">--</span></div>
+
+<div id="toast"></div>
+
+<script>
+/* ================= 像素比格（矢量+像素化渲染） ================= */
+const W=24,H=22,SCALE=4;
+const DOG=document.getElementById('dog'),DC=DOG.getContext('2d');
+const off=document.createElement('canvas');off.width=W;off.height=H;const OC=off.getContext('2d');
+const C={body:'#8b5a2b',dark:'#6b4423',white:'#f7f1e3',black:'#1a1a1a',pink:'#ff8fa3',collar:'#d43a3a'};
+function renderDog(pose,t){
+  OC.clearRect(0,0,W,H);
+  const sit=pose==='sit'||pose==='sad',flat=pose==='sleep',happy=pose==='happy'||pose==='excited'||pose==='pet';
+  const walk=pose==='walk1'||pose==='walk2';
+  const tremble=pose==='panic'?Math.sin(t*40)*0.4:0;
+  const bob=walk?Math.sin(t*2)*0.5:0;
+  const bodyY=12.2+(sit?1.6:0)+(flat?2.2:0)+tremble,headY=7.2+(flat?4.2:0)-(sit?0.4:0)+bob*0.4+tremble;
+  const sw=Math.sin(t*3)*(happy?0.9:0.2);
+  OC.fillStyle=C.body;OC.fillRect(6.5+sw,8.2-sw,1.6,2.4);
+  OC.fillStyle=C.white;OC.fillRect(4.9+sw*1.3,6.0-sw*1.4,1.6,1.8);
+  const legH=flat?0:3.4,lb=walk?Math.sin(t+Math.PI)*0.8:0;
+  if(!flat){
+    OC.fillStyle=C.dark;OC.fillRect(7.6,14.4,1.6,legH+lb);
+    OC.fillStyle=C.body;OC.fillRect(9.8,14.2,1.6,legH-lb);
+    OC.fillStyle=C.white;OC.fillRect(7.6,17.6+lb,1.6,0.8);OC.fillRect(9.8,17.4-lb,1.6,0.8);
+  }
+  OC.save();OC.translate(12.3,bodyY);OC.scale(1,sit?0.72:(flat?0.42:0.62));
+  OC.fillStyle=C.body;OC.beginPath();OC.arc(0,0,5.6,0,7);OC.fill();OC.restore();
+  if(!flat){OC.fillStyle=C.white;OC.fillRect(8.6,bodyY+2.6,7.6,sit?1.4:1.9);}
+  if(!flat){
+    const lb2=walk?Math.sin(t)*0.8:0;
+    OC.fillStyle=C.dark;OC.fillRect(14.6,14.4,1.6,legH+lb2);
+    OC.fillStyle=C.body;OC.fillRect(17.0,14.2,1.6,legH-lb2);
+    OC.fillStyle=C.white;OC.fillRect(14.6,17.6+lb2,1.6,0.8);OC.fillRect(17.0,17.4-lb2,1.6,0.8);
+  }
+  OC.fillStyle=C.body;OC.beginPath();OC.arc(19.3,headY,4.4,0,7);OC.fill();
+  OC.fillStyle=C.white;OC.beginPath();OC.arc(19.6,headY+1.5,3.5,0,7);OC.fill();
+  OC.fillStyle=C.body;
+  OC.save();OC.translate(17.2,headY-1.2);OC.scale(0.55,1.6);OC.beginPath();OC.arc(0,0,2.2,0,7);OC.fill();OC.restore();
+  OC.save();OC.translate(21.4,headY-1.4);OC.scale(0.45,1.35);OC.beginPath();OC.arc(0,0,2.2,0,7);OC.fill();OC.restore();
+  if(flat){OC.fillStyle=C.black;OC.fillRect(20.6,headY+0.2,1.6,0.5);}
+  else if(happy){OC.fillStyle=C.black;OC.fillRect(20.7,headY,1.5,0.6);OC.fillRect(22.2,headY,1.5,0.6);}
+  else{OC.fillStyle=C.black;OC.beginPath();OC.arc(21.3,headY+0.2,0.8,0,7);OC.fill();
+    OC.beginPath();OC.arc(18.0,headY+0.2,0.8,0,7);OC.fill();}
+  OC.fillStyle=C.black;OC.beginPath();OC.arc(23.2,headY+1.7,0.8,0,7);OC.fill();
+  if(happy){OC.fillStyle=C.black;OC.fillRect(22.2,headY+2.3,1.6,0.5);
+    OC.fillStyle=C.pink;OC.fillRect(22.9,headY+2.7,1.0,1.7);}
+  else{OC.fillStyle=C.black;OC.fillRect(21.8,headY+2.3,1.5,0.5);}
+  OC.fillStyle=C.collar;OC.fillRect(16.6,headY+2.9,2.2,1.1);
+  DC.imageSmoothingEnabled=false;DC.clearRect(0,0,96,88);
+  DC.drawImage(off,0,0,W*SCALE,H*SCALE);
+}
+/* ================= 世界与设施（逻辑坐标 1600x900，全屏自适应） ================= */
+const WORLD={w:1600,h:900};
+const FACILITIES={
+  observatory:{name:'🌌 瞭望台',x:70,y:70,w:200,h:130,icon:'◉',hint:'市场情绪 · 宏观'},
+  data:{name:'🏛️ 数据中心',x:700,y:40,w:230,h:150,icon:'⛁',hint:'400+ 品种行情'},
+  hq:{name:'🏢 总部',x:1330,y:90,w:210,h:140,icon:'☾',hint:'战绩 · 日报'},
+  council:{name:'⚖️ 合议厅',x:400,y:400,w:220,h:140,icon:'♟',hint:'八派合议'},
+  screen:{name:'📈 分析中心',x:80,y:620,w:220,h:150,icon:'▤',hint:'蜡烛图 · 指标'},
+  radar:{name:'🎯 雷达站',x:700,y:650,w:210,h:140,icon:'◎',hint:'信号雷达'},
+  warroom:{name:'🗺️ 作战室',x:1150,y:400,w:220,h:140,icon:'⚔',hint:'作战计划'},
+  lab:{name:'🧪 实验室',x:1330,y:620,w:210,h:150,icon:'⚗',hint:'历史回测'},
+};
+/* 建筑 DOM（每种设施独特外观 + 外部缩略数据面板） */
+const bldsEl=document.getElementById('blds');
+const BLD_STYLE={
+  observatory:{cls:'g-obs',body:'<div class="eye"></div><div class="scope"></div><div class="dome"></div>',mini:'obs'},
+  data:{cls:'g-data',body:'<div class="vent"></div><div class="rack"><div class="u"></div><div class="u"></div><div class="u"></div><div class="u"></div></div>',mini:'data'},
+  hq:{cls:'g-hq',body:'<div class="clock2"></div><div class="flag"></div>',mini:'hq'},
+  council:{cls:'g-council',body:'<div class="cols"><div class="c"><i></i></div><div class="c"><i></i></div><div class="c"><i></i></div><div class="c"><i></i></div><div class="c"><i></i></div><div class="c"><i></i></div><div class="c"><i></i></div><div class="c"><i></i></div></div><div class="bench"></div><div class="scales">⚖</div>',mini:'council'},
+  screen:{cls:'g-screen',body:'<div class="bigwin"><div class="line"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="tick">BTC 4H</div>',mini:'screen'},
+  radar:{cls:'g-radar',body:'<div class="sweep"></div><div class="blip" style="left:30px;top:24px"></div><div class="blip" style="left:44px;top:40px;animation-delay:.9s"></div><div class="radar-dish"></div>',mini:'radar'},
+  warroom:{cls:'g-war',body:'<div class="map2"><div class="ar"></div><div class="ar g"></div><div class="pins"></div><div class="pins p2"></div></div><div class="flag" style="left:auto;right:14px"></div>',mini:'war'},
+  lab:{cls:'g-lab',body:'<div class="pipe"></div><div class="bubble"></div><div class="bubble b2"></div><div class="bubble b3"></div><div class="flask">⚗</div>',mini:'lab'},
+};
+function buildBlds(){
+  for(const [k,f] of Object.entries(FACILITIES)){
+    const el=document.createElement('div');el.className='bld '+(BLD_STYLE[k]?.cls||'');el.id='bld-'+k;
+    el.style.cssText=`left:${f.x}px;top:${f.y}px;width:${f.w}px;height:${f.h}px`;
+    const st=BLD_STYLE[k]||{body:''};
+    el.innerHTML=`<div class="sign">${f.icon} ${f.name.replace(/^[^\s]+\s/,'')}</div><div class="roof"></div>
+      <div class="body">${st.body||''}<div class="door"></div></div>
+      <div class="miniPanel" id="mini-${k}">--</div>`;
+    el.onclick=()=>enterFac(k);
+    bldsEl.appendChild(el);
+  }
+}
+/* 装饰（树/路灯/塔） */
+const decorEl=document.getElementById('decor');
+function buildDecor(){
+  const trees=[[40,240],[190,500],[420,300],[560,560],[420,900],[760,850],[1000,300],[1080,580],[1280,260],[1480,500],[1560,840],[320,750],[900,180],[1250,880],[60,820]];
+  trees.forEach(([x,y])=>{const d=document.createElement('div');d.className='tree';
+    d.style.cssText=`left:${x}px;top:${y}px`;d.innerHTML='<div class="t1"></div><div class="t2"></div>';decorEl.appendChild(d);});
+  const lamps=[[40,660],[560,180],[1180,560],[1380,480],[1520,220],[380,560],[850,470],[1450,760],[240,180],[760,260]];
+  lamps.forEach(([x,y])=>{const d=document.createElement('div');d.className='lamp';
+    d.style.cssText=`left:${x}px;top:${y}px`;d.innerHTML='<div class="p"></div><div class="s"></div>';decorEl.appendChild(d);});
+  const towers=[[500,60],[1180,40],[400,560],[1500,560],[60,420],[1540,300]];
+  towers.forEach(([x,y])=>{const d=document.createElement('div');d.className='tower';
+    d.style.cssText=`left:${x}px;top:${y}px`;d.innerHTML='<div class="a"></div><div class="b"></div><div class="l"></div><div class="l l2"></div>';decorEl.appendChild(d);});
+}
+/* 全屏适配：world 按视口缩放居中 */
+const mapEl=document.getElementById('map'),worldEl=document.getElementById('world');
+let WSCALE=1;
+function fitWorld(){
+  const availW=mapEl.clientWidth-24,availH=mapEl.clientHeight-24;
+  WSCALE=Math.min(availW/WORLD.w,availH/WORLD.h);
+  worldEl.style.width=WORLD.w+'px';worldEl.style.height=WORLD.h+'px';
+  worldEl.style.transform=`translate(-50%,-50%) scale(${WSCALE})`;
+}
+/* ================= 比格状态机 ================= */
+const S={x:800,y:450,tx:800,ty:450,dir:1,mode:'idle',mood:'calm',since:0,home:{x:800,y:450}};
+const MOODS={panic:{emoji:'😨',txt:'市场恐慌'},cautious:{emoji:'😟',txt:'谨慎'},calm:{emoji:'😐',txt:'平稳'},
+  happy:{emoji:'😊',txt:'乐观'},excited:{emoji:'🤩',txt:'贪婪'}};
+function say(txt,ms){
+  const el=document.getElementById('speech');
+  el.style.display='block';el.textContent='🐕 '+txt;
+  const mapRect=mapEl.getBoundingClientRect();
+  const sx=mapRect.left+S.x*WSCALE, sy=mapRect.top+S.y*WSCALE;
+  el.style.left=Math.min(window.innerWidth-330,sx+70)+'px';
+  el.style.top=(sy-130)+'px';
+  clearTimeout(say._t);say._t=setTimeout(()=>el.style.display='none',ms||3200);
+}
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';
+  clearTimeout(toast._t);toast._t=setTimeout(()=>e.style.display='none',2600);}
+function setMood(m){
+  S.mood=m;
+  const info=MOODS[m]||MOODS.calm;
+  document.body.className='mood-'+m;
+  document.getElementById('sentiEmoji').textContent=info.emoji;
+  document.getElementById('sentiLbl').textContent='情绪: '+info.txt;
+  updateWeather(m);
+}
+/* 天气系统：情绪→天气 + 日夜循环 */
+const WEATHER_MAP={panic:'⛈ 雷雨',cautious:'🌧 小雨',calm:'☁️ 多云',happy:'🌤 晴间云',excited:'☀️ 晴'};
+function updateWeather(m){
+  const wb=document.getElementById('weatherBadge');
+  if(wb)wb.textContent=WEATHER_MAP[m]||'☁️';
+  document.body.classList.remove('weather-rain','weather-storm');
+  if(m==='panic'||m==='cautious')document.body.classList.add(m==='panic'?'weather-storm':'weather-rain');
+  updateDayNight();
+}
+function updateDayNight(){
+  const h=new Date().getHours();
+  document.body.classList.toggle('night',h<6||h>=18);
+}
+function gotoPoint(x,y,onArrive){
+  S.tx=x;S.ty=y;S.mode='walk';S.onArrive=onArrive;S.since=0;
+  document.getElementById('beagleState').textContent='去设施';
+}
+function walkTo(facKey,onArrive){
+  const f=FACILITIES[facKey];
+  gotoPoint(f.x+f.w/2,f.y+f.h+20,onArrive);
+}
+/* 点击地图：不再指挥比格（比格自主），只保留点比格互动 */
+mapEl.addEventListener('click',e=>{
+  const r=mapEl.getBoundingClientRect();
+  const wx=(e.clientX-r.left)/WSCALE,wy=(e.clientY-r.top)/WSCALE;
+  const bx=S.x+48,by=S.y+40;
+  if(Math.abs(wx-bx)<70&&Math.abs(wy-by)<70){pet();return;}
+});
+function pet(){say('汪！汪！',2200);S.moodFlash='happy';setTimeout(()=>S.moodFlash=null,1600);}
+/* ================= 比格自主工作调度器 =================
+   日程循环：数据中心→分析中心→雷达站→瞭望台→总部→实验室→休息散步
+   到达设施：办公动画 + 工作状态条 + 建筑高亮；agent 事件可插队 */
+const SCHEDULE=['data','screen','radar','observatory','council','warroom','hq','lab'];
+const WORK_TALK={
+  data:'汪！到数据中心取最新行情…',screen:'回分析中心盯盘！',radar:'去雷达站扫描信号！',
+  observatory:'去瞭望台看市场情绪…',hq:'去总部汇报工作！',lab:'去实验室跑回测！'};
+const SCH={idx:0,stay:0,state:'travel'}; // travel | work | rest
+function nextWork(){
+  const f=FACILITIES[SCHEDULE[SCH.idx]];
+  gotoPoint(f.x+f.w/2,f.y+f.h+16,()=>{
+    SCH.state='work';
+    SCH.stay=18+Math.random()*20; // 停留 18-38s
+    document.getElementById('bld-'+SCHEDULE[SCH.idx]).classList.add('working');
+    say(WORK_TALK[SCHEDULE[SCH.idx]]||'工作中…',3000);
+  });
+  SCH.state='travel';
+  document.getElementById('beagleState').textContent='去'+FACILITIES[SCHEDULE[SCH.idx]].name.replace(/^[^\s]+\s/,'');
+  const cur=SCHEDULE[SCH.idx],next=SCHEDULE[(SCH.idx+1)%SCHEDULE.length];
+  document.getElementById('wbCur').textContent=FACILITIES[cur].name.replace(/^[^\s]+\s/,'');
+  document.getElementById('wbNext').textContent=FACILITIES[next].name.replace(/^[^\s]+\s/,'');
+}
+function advanceSchedule(){
+  document.getElementById('bld-'+SCHEDULE[SCH.idx]).classList.remove('working');
+  SCH.idx=(SCH.idx+1)%SCHEDULE.length;
+  nextWork();
+}
+/* 情绪插队：恐慌→总部避险，贪婪→兴奋乱跑 */
+let moodInterrupt=false;
+function checkMoodInterrupt(){
+  if(S.mood==='panic'&&SCH.state==='work'&&!moodInterrupt){
+    moodInterrupt=true;
+    document.getElementById('bld-'+SCHEDULE[SCH.idx]).classList.remove('working');
+    const f=FACILITIES.hq;
+    gotoPoint(f.x+f.w/2,f.y+f.h+16,()=>{say('呜…市场恐慌，先回总部避险！',3500);setTimeout(()=>{moodInterrupt=false;nextWork();},8000);});
+  }
+}
+/* ================= 主循环 ================= */
+let lastT=performance.now();
+function loop(t){
+  const dt=Math.min(50,(t-lastT))/1000;lastT=t;
+  S.since+=dt;
+  if(S.mode==='walk'&&!S.onArrive&&SCH.state!=='work'){/* 自主行走中 */}
+  const moodPose=S.moodFlash?S.moodFlash:(S.mood==='panic'?'panic':(S.mood==='excited'?'happy':'idle'));
+  if(S.mode==='walk'){
+    const dx=S.tx-S.x,dy=S.ty-S.y;
+    const dist=Math.hypot(dx,dy);
+    if(dist>6){
+      const sp=Math.min(140,dist*2.2);
+      S.x+=dx/dist*sp*dt;S.y+=dy/dist*sp*dt;
+      S.dir=dx>0?1:-1;
+      renderDog(Math.floor(t/90)%2?'walk1':'walk2',t/100);
+    }else{S.mode='work';document.getElementById('beagleState').textContent='办公中';
+      if(S.onArrive){const fn=S.onArrive;S.onArrive=null;fn();}}
+  }else{
+    if(S.mode==='work')renderDog('sit',t/100);
+    else renderDog(moodPose==='panic'?'sit':'idle',t/100);
+  }
+  /* 自主日程推进 */
+  if(SCH.state==='work'){
+    SCH.stay-=dt;
+    if(SCH.stay<=0){SCH.state='idle';advanceSchedule();}
+  }else if(SCH.state==='idle'&&S.mode!=='walk'){
+    nextWork();
+  }
+  if(!currentFac)checkMoodInterrupt();
+  const wrap=document.getElementById('dogWrap');
+  wrap.style.left=(S.x-30)+'px';wrap.style.top=(S.y-80)+'px';
+  wrap.style.transform=S.dir>0?'scaleX(1)':'scaleX(-1)';
+  requestAnimationFrame(loop);
+}
+/* 启动：立即开始自主日程 */
+setTimeout(nextWork,2000);
+/* ================= 情绪与数据源 ================= */
+let senti={score:50,label:'中性',detail:{}};
+async function refreshSenti(){
+  try{
+    const d=await(await fetch('/api/macro')).json();
+    senti=d.sentiment||senti;
+    const s=senti;
+    const bar=document.getElementById('sentiBar');
+    bar.style.width=s.score+'%';
+    bar.style.background=s.score<35?'var(--red)':(s.score<55?'var(--orange)':(s.score<75?'var(--green)':'var(--purple)'));
+    const moodMap={恐慌:'panic',谨慎:'cautious',中性:'calm',乐观:'happy',贪婪:'excited'};
+    setMood(moodMap[s.label]||'calm');
+    document.getElementById('sentiLbl').textContent='情绪: '+s.label+' ('+s.score+')';
+  }catch(_){}
+  try{
+    const f=await(await fetch('/api/fgi')).json();
+    if(f&&!f.error){
+      const el=document.getElementById('fgiBadge');
+      el.textContent='FGI: '+f.value+' '+f.label;
+      el.style.borderColor=f.value<35?'var(--red)':(f.value<55?'var(--orange)':'var(--green)');
+      el.style.color=f.value<35?'var(--red)':(f.value<55?'var(--orange)':'var(--green)');
+    }
+  }catch(_){}
+  try{
+    const v=await(await fetch('/api/verdict')).json();
+    if(v&&v.verdict){
+      const el=document.getElementById('verdictBadge');
+      el.textContent='Verdict: '+v.verdict+' '+v.score+'分';
+      el.style.borderColor=v.color==='green'?'var(--green)':(v.color==='red'?'var(--red)':'var(--yellow)');
+      el.style.color=v.color==='green'?'var(--green)':(v.color==='red'?'var(--red)':'var(--yellow)');
+    }
+  }catch(_){}
+  try{
+    const d=await(await fetch('/api/regime')).json();
+    const m=d.market||d.single;
+    if(m&&m.label){
+      const el=document.getElementById('regimeBadge');
+      el.textContent='Regime: '+m.emoji+' '+m.label;
+      const col=m.regime==='crash'?'var(--red)':(m.regime==='highvol'?'var(--orange)':(m.regime==='trend'?'var(--green)':'var(--cyan)'));
+      el.style.borderColor=col;el.style.color=col;
+    }
+  }catch(_){}
+  try{
+    const d=await(await fetch('/api/anomalies')).json();
+    const n=(d.anomalies||[]).length;
+    const el=document.getElementById('anomalyBadge');
+    el.textContent=n>0?'🔍 '+n+' 异常!':'🔍 正常';
+    el.style.borderColor=n>0?'var(--red)':'var(--line2)';
+    el.style.color=n>0?'var(--red)':'var(--dim)';
+  }catch(_){}
+}
+async function refreshSrc(){
+  try{
+    const d=await(await fetch('/api/sources')).json();
+    const s=d.sources||{};
+    document.getElementById('srcStatus').innerHTML=
+      `源: <b>${s.BINANCE&&s.BINANCE.ok?'BINANCE✓':'BINANCE✗'}</b>
+       <b>${s.GATE&&s.GATE.ok?'GATE✓':'GATE✗'}</b>
+       <b>${s.KUCOIN&&s.KUCOIN.ok?'KUCOIN✓':'KUCOIN✗'}</b>
+       <b class="dim">${d.stats?d.stats.total+'币':''}</b>`;
+  }catch(_){}
+}
+/* ================= 设施界面 ================= */
+let currentFac=null;
+const CACHE={};
+function cacheGet(k,ttl=300000){const c=CACHE[k];return c&&Date.now()-c.t<ttl?c.v:null;}
+function cacheSet(k,v){CACHE[k]={v,t:Date.now()};}
+/* 点击建筑：查看比格工作成果 */
+function enterFac(k){
+  currentFac=k;
+  const f=FACILITIES[k];
+  const ov=document.getElementById('overlay');
+  document.getElementById('ovTitle').textContent=f.name;
+  document.getElementById('ovHint').textContent=f.hint;
+  ov.classList.add('open');
+  const renderers={data:facData,screen:facScreen,radar:facRadar,hq:facHQ,lab:facLab,observatory:facObs,
+    council:facCouncil,warroom:facWarroom};
+  (renderers[k]||facData)();
+  say('看看 '+f.name.replace(/^[^\s]+\s/,'')+' 的工作成果！',2500);
+}
+function closeOv(){document.getElementById('overlay').classList.remove('open');currentFac=null;}
+function exitFac(){closeOv();}
+const FC=()=>document.getElementById('ovContent');
+function esc(t){return String(t).replace(/</g,'&lt;');}
+/* --- 数据中心（机会榜 + 行情 + 费率） --- */
+async function facData(){
+  const box=FC();
+  box.innerHTML='<div class="panel2"><h3>🎯 今日机会榜 · 智能选品</h3><div id="oppList">加载中…</div></div>'
+    +'<div class="panel2"><h3>📊 板块热度</h3><div id="sectorBody">—</div></div>'
+    +'<div class="panel2"><h3>⛁ 全品种行情 · 400+</h3><div style="display:flex;gap:8px;margin-bottom:10px">'
+    +'<input id="q" placeholder="搜索币种…" style="flex:1"><button class="pbtn cyan" onclick="facData()">刷新</button></div>'
+    +'<table><thead><tr><th>#</th><th>币</th><th>价格</th><th>24h</th><th>成交额</th><th>费率%</th><th>源</th></tr></thead><tbody id="tb"></tbody></table></div>';
+  const [d, fu, opp]=await Promise.all([
+    cacheGet('tickers')||(await fetch('/api/tickers?top=80')).json(),
+    (await fetch('/api/futures')).json().catch(()=>[]),
+    (await fetch('/api/opportunity?limit=6')).json().catch(()=>({})),
+  ]);
+  cacheSet('tickers',d);
+  if(opp&&opp.board&&opp.board.length){
+    document.getElementById('oppList').innerHTML=opp.board.map(b=>
+      `<div class="sig" onclick="facCalc('${b.symbol}')">
+        <span style="font-size:15px">${b.direction==='bullish'?'🟢':(b.direction==='bearish'?'🔴':'⚪')}</span>
+        <span style="flex:1"><b>${esc(b.symbol.replace('USDT',''))}</b> · 机会 <b class="yellow">${b.score}</b>
+          <span class="dim">评级${b.rating}(${esc(b.grade.replace(' ',''))}) 共振${b.resonance}</span>
+          ${b.opinion?`<br><span class="dim" style="font-size:10px">🐕 ${esc(b.opinion.slice(0,60))}</span>`:''}</span></div>`).join('');
+  } else {
+    document.getElementById('oppList').innerHTML='<span class="dim">暂无数据</span>';
+  }
+  const fmap={};(fu||[]).forEach(f=>fmap[f.symbol]=(f.rate*100));
+  const q=(document.getElementById('q')||{value:''}).value.toLowerCase();
+  const rows=d.filter(t=>!q||t.symbol.toLowerCase().includes(q));
+  document.getElementById('tb').innerHTML=rows.map((t,i)=>{
+    const fr=fmap[t.symbol];
+    const frc=fr==null?'—':(fr>0.02?'<span class="red">'+fr.toFixed(4)+'</span>':(fr<-0.02?'<span class="green">'+fr.toFixed(4)+'</span>':'<span class="dim">'+fr.toFixed(4)+'</span>'));
+    return `<tr onclick="facCalc('${t.symbol}')"><td>${i+1}</td><td>${esc(t.symbol.replace('USDT',''))}</td>
+     <td>${Number(t.price).toFixed(6).replace(/0+$/,'')}</td>
+     <td class="${t.chg24h>=0?'green':'red'}">${t.chg24h>=0?'+':''}${Number(t.chg24h).toFixed(2)}%</td>
+     <td>${(t.quote_vol24h/1e8).toFixed(1)}亿</td><td>${frc}</td><td class="dim">${t.source}</td></tr>`;
+  }).join('');
+  box.insertAdjacentHTML('beforeend','<div class="dim" style="margin-top:6px">💡 机会榜=评级×0.55+共振×0.35+方向加成 · 点击币种 → 指标计算过程</div>');
+  loadSectors();
+}
+async function facCalc(sym){
+  const box=FC();
+  box.innerHTML='<div class="panel2"><h3>📐 '+sym+' · 指标计算过程</h3><div id="calcs">计算中…</div></div>';
+  let d=cacheGet('calc-'+sym)||await(await fetch('/api/calc/'+sym)).json();
+  cacheSet('calc-'+sym,d);
+  if(d.error){box.innerHTML='<span class="red">'+esc(d.error)+'</span>';return;}
+  document.getElementById('calcs').innerHTML=Object.entries(d.calcs||{}).map(([k,v])=>
+    v&&!v.error?`<div class="calc"><div class="f">公式: ${esc(v.formula||'')}</div>
+      ${(v.steps||[]).map(s=>`<div class="st">▸ ${esc(s)}</div>`).join('')}
+      <div class="res">= ${esc(v.result)}</div><div class="int">${esc(v.interpret||'')}</div></div>`:'').join('');
+  box.insertAdjacentHTML('beforeend','<button class="pbtn" onclick="facData()">◀ 返回行情</button>');
+}
+/* --- 分析中心（蜡烛图） --- */
+let CHART={sym:'BTCUSDT',iv:'4h',data:[],ov:{ema:true,boll:false}};
+async function facScreen(){
+  const box=FC();
+  box.innerHTML=`<div class="panel2"><h3>📈 分析中心 · ${CHART.sym} ${CHART.iv}</h3>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input id="csym" value="${CHART.sym}" style="flex:1">
+      <select id="civ"><option ${CHART.iv==='15m'?'selected':''}>15m</option><option ${CHART.iv==='1h'?'selected':''}>1h</option>
+      <option ${CHART.iv==='4h'?'selected':''}>4h</option><option ${CHART.iv==='1d'?'selected':''}>1d</option></select>
+      <button class="pbtn cyan" onclick="loadChart()">加载</button></div>
+    <canvas id="candles"></canvas>
+    <div class="legend">
+      <span class="${CHART.ov.ema?'on':'off'}" onclick="togOv('ema')">EMA20/50</span>
+      <span class="${CHART.ov.boll?'on':'off'}" onclick="togOv('boll')">BOLL</span>
+    </div>
+    <div class="dim" id="cinfo" style="margin-top:8px">💡 点击 K 线看 OHLCV · 悬停十字光标</div></div>`;
+  await loadChart();
+}
+async function loadChart(){
+  CHART.sym=document.getElementById('csym').value.toUpperCase();
+  CHART.iv=document.getElementById('civ').value;
+  const box=FC();
+  try{
+    let d=cacheGet('kl-'+CHART.sym+CHART.iv);
+    if(!d){d=await(await fetch('/api/kline/'+CHART.sym+'?interval='+CHART.iv+'&limit=150')).json();cacheSet('kl-'+CHART.sym+CHART.iv,d);}
+    CHART.data=d;drawCandles();
+  }catch(e){box.querySelector('#cinfo').textContent='加载失败: '+e;}
+}
+function drawCandles(){
+  const cv=document.getElementById('candles');if(!cv)return;
+  const c=cv.getContext('2d'),Wc=cv.clientWidth,Hc=cv.clientHeight;
+  cv.width=Wc*devicePixelRatio;cv.height=Hc*devicePixelRatio;
+  c.scale(devicePixelRatio,devicePixelRatio);
+  c.clearRect(0,0,Wc,Hc);
+  const d=CHART.data;if(!d||!d.length)return;
+  const min=Math.min(...d.map(k=>k.l)),max=Math.max(...d.map(k=>k.h));
+  const span=(max-min)||1,bw=Wc/d.length;
+  const X=i=>i*bw+bw/2,Y=v=>Hc-10-(v-min)/span*(Hc-20);
+  c.strokeStyle='#1a1f3d';c.lineWidth=1;
+  for(let i=0;i<6;i++){c.beginPath();c.moveTo(0,Y(min+span*i/5));c.lineTo(Wc,Y(min+span*i/5));c.stroke();}
+  d.forEach((k,i)=>{
+    const up=k.c>=k.o;
+    c.strokeStyle=c.fillStyle=up?'#6ef57a':'#ff6c6c';c.lineWidth=1;
+    c.beginPath();c.moveTo(X(i),Y(k.h));c.lineTo(X(i),Y(k.l));c.stroke();
+    const bh=Math.max(2,Math.abs(Y(k.o)-Y(k.c)));
+    c.fillRect(X(i)-bw*0.32,Y(Math.max(k.o,k.c)),bw*0.64,bh);
+  });
+  const closes=d.map(k=>k.c);
+  if(CHART.ov.ema){
+    const e20=emaS(closes,20),e50=emaS(closes,50);
+    line(c,e20,'#ffd75e',X,Y);line(c,e50,'#58a6ff',X,Y);
+  }
+  if(CHART.ov.boll){
+    const up2=[],dn2=[];for(let i=19;i<closes.length;i++){
+      const s=closes.slice(i-19,i+1),m=s.reduce((a,b)=>a+b,0)/20;
+      const sd=Math.sqrt(s.reduce((a,b)=>a+(b-m)**2,0)/20);
+      up2.push(m+2*sd);dn2.push(m-2*sd);}
+    line(c,dn2,'#8a8fae',X,Y);line(c,up2,'#8a8fae',X,Y);
+  }
+  cv.onclick=e=>{
+    const r=cv.getBoundingClientRect();
+    const i=Math.floor((e.clientX-r.left)/Wc*d.length);
+    const k=d[Math.max(0,Math.min(d.length-1,i))];
+    document.getElementById('cinfo').textContent=
+      `【${CHART.sym} ${new Date(k.ts).toLocaleString('zh-CN',{timeZone:'UTC'})}】开 ${k.o} 高 ${k.h} 低 ${k.l} 收 ${k.c} 量 ${Number(k.v).toFixed(2)}`;
+  };
+  cv.onmousemove=e=>{
+    const r=cv.getBoundingClientRect();
+    const i=Math.floor((e.clientX-r.left)/Wc*d.length);
+    if(i<0||i>=d.length)return;
+    const k=d[i];
+    c.clearRect(0,0,Wc,Hc);drawCandles();
+    c.strokeStyle='rgba(34,211,238,.4)';c.beginPath();c.moveTo(X(i),10);c.lineTo(X(i),Hc-10);c.stroke();
+    c.fillStyle='#22d3ee';c.fillRect(X(i)-30,8,60,14);
+    c.fillStyle='#0b0e1a';c.fillText(k.c.toFixed(4),X(i)-26,18);
+  };
+}
+function emaS(v,n){const k=2/(n+1),o=[v.slice(0,n).reduce((a,b)=>a+b,0)/n];
+  for(let i=n;i<v.length;i++)o.push(v[i]*k+o[o.length-1]*(1-k));return o;}
+function line(c,v,color,X,Y){
+  c.strokeStyle=color;c.lineWidth=1.5;c.beginPath();
+  v.forEach((x,i)=>{const px=X(i+(CHART.data.length-v.length)),py=Y(x);i?c.lineTo(px,py):c.moveTo(px,py);});
+  c.stroke();
+}
+function togOv(n){CHART.ov[n]=!CHART.ov[n];
+  document.querySelectorAll('#candles+.legend span').forEach(s=>s.className=CHART.ov[s.textContent.includes('EMA')?'ema':'boll']?'on':'off');
+  drawCandles();
+  if(CHART.ov[n])fetch('/api/calc/'+CHART.sym).then(r=>r.json()).then(d=>{
+    const c=d.calcs&&d.calcs[n];if(c&&c.formula)
+      document.getElementById('cinfo').textContent=`📐 ${c.name}: ${(c.steps||[]).join(' → ')} = ${c.result}`;});}
+/* --- 雷达站 --- */
+async function facRadar(){
+  const box=FC();
+  box.innerHTML='<div class="panel2"><h3>◎ 信号雷达 · 深研池扫描</h3><div id="sigList">扫描中…</div></div>';
+  let d=cacheGet('radar')||await(await fetch('/api/radar?limit=15')).json();
+  cacheSet('radar',d,120000);
+  if(d.error){document.getElementById('sigList').innerHTML='<span class="red">'+esc(d.error)+'</span>';return;}
+  const sigs=d.signals||[];
+  if(!sigs.length){document.getElementById('sigList').innerHTML='<span class="dim">当前无强信号（市场平静）</span>';return;}
+  document.getElementById('sigList').innerHTML=sigs.map(s=>{
+    const bt=s.back||{};
+    return `<div class="sig" onclick="facRadarDetail(${JSON.stringify(s).replace(/"/g,'&quot;')})">
+      <span style="font-size:16px">${s.dir==='bullish'?'🟢':'🔴'}</span>
+      <span style="flex:1">${esc(s.symbol.replace('USDT',''))} · <b>${esc(s.name)}</b> <span class="dim">(${esc(s.val)})</span></span>
+      ${bt.count?`<span class="dim">历史${bt.count}次 胜${bt.win_rate}%</span>`:''}</div>`;
+  }).join('');
+}
+function facRadarDetail(s){
+  const box=FC();
+  const c=s.calc||{},bt=s.back||{};
+  box.innerHTML=`<div class="panel2"><h3>🎯 ${esc(s.symbol)} · ${esc(s.name)}</h3>
+    <div class="calc"><div class="f">${esc(s.interval)} 信号计算</div>
+      ${(c.steps||[]).map(x=>`<div class="st">▸ ${esc(x)}</div>`).join('')}
+      ${c.result?`<div class="res">= ${esc(c.result)}</div>`:''}
+      ${c.interpret?`<div class="int">${esc(c.interpret)}</div>`:''}</div>
+    ${bt.count?`<div class="calc"><div class="f">历史背书（过去1年 ${esc(s.interval)}）</div>
+      <div class="st">▸ 出现 ${bt.count} 次</div>
+      <div class="st">▸ 5根内触 +2%: ${bt.win_rate}% · 平均最高 ${bt.avg_max_up}%</div>
+      <div class="st">▸ 5根内触 -2%: ${bt.loss_rate}% · 平均最大回撤 ${bt.avg_max_dn}%</div></div>`:''}
+    <button class="pbtn" onclick="facRadar()">◀ 返回雷达</button></div>`;
+}
+/* --- 总部 --- */
+async function facHQ(){
+  const box=FC();
+  box.innerHTML='<div class="panel2"><h3>📋 分析师战绩</h3><div id="hqStats">加载…</div></div><div class="panel2"><h3>🗂️ 历史分析</h3><div id="hqList">加载…</div></div>';
+  try{
+    const s=await(await fetch('/api/stats')).json();
+    document.getElementById('hqStats').innerHTML=
+      `<div class="grid2"><div class="kv"><span>总预测</span><b>${s.total}</b></div>
+      <div class="kv"><span>命中</span><b class="green">${s.wins}</b></div>
+      <div class="kv"><span>止损</span><b class="red">${s.losses}</b></div>
+      <div class="kv"><span>胜率</span><b class="yellow">${s.win_rate||0}%</b></div></div>`;
+    const a=await(await fetch('/api/analyses?limit=8')).json();
+    const vd=await(await fetch('/api/verdict')).json().catch(()=>null);
+    let vh='';
+    if(vd&&vd.verdict) vh=`<div class="calc"><div class="f">⚖️ 每日 Verdict · ${esc(vd.date)}</div>
+      <div class="res" style="color:${vd.color==='green'?'var(--green)':(vd.color==='red'?'var(--red)':'var(--yellow)')}">${esc(vd.verdict)} · ${vd.score}分</div>
+      ${(vd.reasons||[]).slice(0,4).map(r=>`<div class="st">▸ ${esc(r)}</div>`).join('')}</div>`;
+    document.getElementById('hqList').innerHTML=vh+a.map(x=>
+      `<div class="calc"><div class="f">${new Date(x.ts*1000).toLocaleString('zh-CN')} · ${esc(x.symbol)} · ${esc(x.market_state)}</div>
+      <div class="st">${esc((x.report||'').slice(0,200))}${(x.report||'').length>200?'…':''}</div></div>`).join('')||'<span class="dim">暂无</span>';
+  }catch(e){box.innerHTML='<span class="red">'+e+'</span>';}
+}
+/* --- 实验室（回测） --- */
+async function facLab(){
+  const box=FC();
+  box.innerHTML=`<div class="panel2"><h3>⚗ 回测实验室 · 信号历史验证</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <input id="bsym" value="BTCUSDT" style="width:110px">
+      <select id="biv"><option>4h</option><option>1h</option><option>15m</option><option>1d</option></select>
+      <select id="bsig"><option value="rsi_os">RSI超卖(&lt;30)</option><option value="rsi_ob">RSI超买(&gt;70)</option>
+        <option value="boll_up">突破布林上轨</option><option value="boll_dn">跌破布林下轨</option></select>
+      <button class="pbtn green" onclick="runBt()">▶ 运行回测</button></div>
+    <div id="btRes" class="dim">选择信号运行，查看历史胜率统计（过去1年数据）</div></div>`;
+}
+async function runBt(){
+  const box=document.getElementById('btRes');
+  box.innerHTML='<span class="cyan">回测中…</span>';
+  const sym=document.getElementById('bsym').value.toUpperCase();
+  const iv=document.getElementById('biv').value;
+  const sig=document.getElementById('bsig').value;
+  try{
+    const d=await(await fetch(`/api/backtest/run?symbol=${sym}&interval=${iv}&signal=${sig}`)).json();
+    if(d.error){box.innerHTML='<span class="red">'+esc(d.error)+'</span>';return;}
+    box.innerHTML=`<div class="calc"><div class="f">${esc(d.signal)} · ${esc(d.symbol)} ${esc(d.interval)} · 过去1年</div>
+      <div class="st">▸ 信号出现 <b>${d.count}</b> 次</div>
+      <div class="st">▸ 5根内触及 +${d.win_pct}%: <b class="green">${d.win_rate}%</b>（平均最高 ${d.avg_max_up}%）</div>
+      <div class="st">▸ 5根内触及 -${d.loss_pct}%: <b class="red">${d.loss_rate}%</b>（平均最大回撤 ${d.avg_max_dn}%）</div>
+      <div class="res">盈亏比参考 ${d.count?((d.win_rate/100*d.avg_max_up)/(d.loss_rate/100*d.avg_max_dn)).toFixed(2):'-'}</div></div>`;
+  }catch(e){box.innerHTML='<span class="red">'+e+'</span>';}
+}
+/* 智能风控面板 */
+async function loadRisk(){
+  const box=document.getElementById('riskBody');
+  box.innerHTML='<span class="dim">风控引擎计算中…</span>';
+  try{
+    const d=await(await fetch('/api/risk?symbol=BTCUSDT&direction=bullish&confidence=65')).json();
+    if(d.error){box.innerHTML='<span class="red">'+esc(d.error)+'</span>';return;}
+    const col=d.regime==='crash'?'var(--red)':(d.regime==='highvol'?'var(--orange)':(d.regime==='trend'?'var(--green)':'var(--cyan)'));
+    box.innerHTML=`<div class="kv"><span>市场状态</span><b style="color:${col}">${d.emoji} ${d.regime_label}</b></div>
+      <div class="kv"><span>动态止损</span><b class="red">${d.stop_pct}%</b></div>
+      <div class="kv"><span>Chandelier 追踪</span><b>${d.chandelier_pct}%</b></div>
+      <div class="kv"><span>建议仓位</span><b class="yellow">${d.position_pct}%</b></div>
+      <div class="kv"><span>单笔风险敞口</span><b>${d.exposure.risk_per_trade}% 资金</b></div>
+      <div class="kv"><span>ATR 波动</span><b>${d.atr_pct}%</b></div>
+      <div class="int" style="margin-top:6px">${esc(d.note||'')}</div>`;
+  }catch(e){box.innerHTML='<span class="red">'+e+'</span>';}
+}
+/* 瞭望台增强：regime + 贝叶斯 */
+async function facObs(){
+  const box=FC();
+  box.innerHTML='<div class="grid2"><div class="panel2"><h3>◉ 市场情绪</h3><div id="obsSenti">加载…</div></div>'
+    +'<div class="panel2"><h3>🌐 宏观视角</h3><div id="obsMacro">加载…</div></div></div>';
+  try{
+    const d=await(await fetch('/api/macro')).json();
+    const s=d.sentiment||{},det=s.detail||{},ma=d.macro||{},b=d.beagle||{};
+    const col=s.score<35?'var(--red)':(s.score<55?'var(--orange)':(s.score<75?'var(--green)':'var(--purple)'));
+    document.getElementById('obsSenti').innerHTML=
+      `<div style="display:flex;gap:16px;align-items:center">
+        <div class="gauge" style="border-color:${col}"><span class="val" style="color:${col}">${s.score}</span>
+          <span class="lbl">${esc(s.label)}</span></div>
+        <div style="flex:1">
+          <div class="kv"><span>上涨占比</span><b>${det.up_ratio||0}%</b></div>
+          <div class="kv"><span>平均涨跌</span><b class="${(det.avg_chg||0)>=0?'green':'red'}">${det.avg_chg||0}%</b></div>
+          <div class="kv"><span>BTC 24h</span><b class="${(det.btc_chg||0)>=0?'green':'red'}">${det.btc_chg||0}%</b></div>
+          <div class="kv"><span>覆盖品种</span><b>${det.total||0}</b></div>
+          <div class="kv"><span>比格状态</span><b>${b.emoji||'🐕'} ${esc(b.text||'')}</b></div>
+        </div></div>`;
+    // FGI + Verdict
+    const [fg, vd]=await Promise.all([
+      fetch('/api/fgi').then(r=>r.json()).catch(()=>null),
+      fetch('/api/verdict').then(r=>r.json()).catch(()=>null),
+    ]);
+    let extra='';
+    if(fg&&!fg.error) extra+=`<div class="calc"><div class="f">😱 FGI 恐惧贪婪指数（alternative.me 免费源）</div>
+      <div class="res" style="color:${fg.value<35?'var(--red)':(fg.value<55?'var(--orange)':'var(--green)')}">${fg.value} · ${esc(fg.label)}</div>
+      <div class="int">0=极度恐慌 · 100=极度贪婪</div></div>`;
+    if(vd&&vd.verdict) extra+=`<div class="calc"><div class="f">⚖️ 每日市场 Verdict（${esc(vd.date)}）</div>
+      <div class="res" style="color:${vd.color==='green'?'var(--green)':(vd.color==='red'?'var(--red)':'var(--yellow)')}">${esc(vd.verdict)} · ${vd.score}分</div>
+      ${(vd.reasons||[]).slice(0,5).map(r=>`<div class="st">▸ ${esc(r)}</div>`).join('')}</div>`;
+    document.getElementById('obsMacro').innerHTML=extra+document.getElementById('obsMacro').innerHTML;
+    document.getElementById('obsMacro').innerHTML=
+      `<div class="kv"><span>BTC 主导度(近似)</span><b>${ma.btc_d!=null?ma.btc_d+'%':'—'}</b></div>
+      <div class="kv"><span>ETH/BTC</span><b>${ma.eth_btc!=null?ma.eth_btc:'—'}</b></div>
+      <div class="kv"><span>平均波动率</span><b>${ma.avg_volatility!=null?ma.avg_volatility+'%':'—'}</b></div>
+      <div class="kv"><span>24h 总成交</span><b>${ma.total_vol_24h!=null?ma.total_vol_24h+'B':'—'}</b></div>
+      <h3 style="margin-top:12px">领涨</h3>${(ma.leaders||[]).map(l=>`<div class="kv"><span>${esc(l.symbol)}</span><b class="green">+${l.chg}%</b></div>`).join('')}
+      <h3 style="margin-top:12px">领跌</h3>${(ma.laggards||[]).map(l=>`<div class="kv"><span>${esc(l.symbol)}</span><b class="red">${l.chg}%</b></div>`).join('')}`;
+  }catch(e){box.innerHTML='<span class="red">'+e+'</span>';}
+}
+/* --- 合议厅（八派合议可视化，轻量秒开）+ 决策树 --- */
+async function facCouncil(){
+  const box=FC();
+  box.innerHTML='<div class="panel2"><h3>♟ 合议厅 · 八派观点灯柱</h3><div id="councilBody">邀请八派入席…</div></div>'
+    +'<div class="panel2"><h3>🎲 贝叶斯融合 · 概率推理</h3><div id="bayesBody">—</div></div>'
+    +'<div class="panel2"><h3>📋 决策树 · 完整证据链</h3><div id="treeBody"><button class="pbtn cyan" onclick="loadTree()">展开决策树</button></div></div>';
+  loadBayes();
+  try{
+    const d=await(await fetch('/api/council?symbol=BTCUSDT')).json();
+    if(d.error){document.getElementById('councilBody').innerHTML='<span class="red">'+esc(d.error)+'</span>';return;}
+    const col=document.getElementById('councilBody');
+    let h='<div style="display:flex;gap:6px;align-items:flex-end;height:150px;margin:10px 0">';
+    (d.schools||[]).forEach(s=>{
+      const c=s.direction==='bullish'?'var(--green)':(s.direction==='bearish'?'var(--red)':'var(--dim)');
+      h+=`<div style="flex:1;text-align:center"><div style="height:${s.confidence}px;background:${c};border:2px solid #000;box-shadow:0 0 10px ${c}"></div>
+        <div style="font-size:10px;margin-top:4px">${esc(s.school)}</div></div>`;
+    });
+    h+='</div>';
+    const tot=(d.agreement||0);
+    h+=`<div class="kv"><span>合议方向</span><b class="${d.direction==='bullish'?'green':(d.direction==='bearish'?'red':'yellow')}">${d.direction} · 一致性 ${tot}%</b></div>`;
+    (d.schools||[]).forEach(s=>{
+      h+=`<div class="kv"><span>${esc(s.school)}</span><b class="${s.direction==='bullish'?'green':(s.direction==='bearish'?'red':'dim')}">${s.direction} ${s.confidence}%</b></div>
+      <div class="dim" style="font-size:10px;margin:-2px 0 6px 0">${esc(s.note||'')}</div>`;
+    });
+    col.innerHTML=h;
+  }catch(e){document.getElementById('councilBody').innerHTML='<span class="red">'+e+'</span>';}
+}
+/* 贝叶斯融合面板 */
+async function loadBayes(sym){
+  const box=document.getElementById('bayesBody');
+  box.innerHTML='<span class="dim">概率推理中…</span>';
+  try{
+    const d=await(await fetch('/api/bayes/'+(sym||'BTCUSDT'))).json();
+    if(d.error){box.innerHTML='<span class="red">'+esc(d.error)+'</span>';return;}
+    const col=d.direction==='bullish'?'var(--green)':(d.direction==='bearish'?'var(--red)':'var(--yellow)');
+    let h=`<div style="display:flex;align-items:center;gap:14px">
+      <div class="gauge" style="border-color:${col};width:110px;height:110px"><span class="val" style="color:${col};font-size:22px">${d.p_bullish}%</span>
+      <span class="lbl">P(看多)</span></div>
+      <div style="flex:1">
+        <div class="kv"><span>融合方向</span><b style="color:${col}">${d.direction}</b></div>
+        <div class="kv"><span>证据强度</span><b>${d.strength}%</b></div>
+        <div class="kv"><span>证据数</span><b>${(d.evidences||[]).length} 项</b></div></div></div>
+      <div style="margin-top:8px">`;
+    (d.evidences||[]).forEach(e=>{
+      h+=`<div class="st">▸ ${e.evidence==='bullish'?'🟢':'🔴'} ${e.evidence} · 胜率${e.hit_rate} · LR ${e.lr}</div>`;
+    });
+    h+='</div><div class="dim" style="margin-top:6px">💡 每项证据按历史胜率提供似然比，贝叶斯更新得后验概率</div>';
+    box.innerHTML=h;
+  }catch(e){box.innerHTML='<span class="red">'+e+'</span>';}
+}
+/* 决策树展开 */
+async function loadTree(sym){
+  const box=document.getElementById('treeBody');
+  box.innerHTML='<span class="dim">生成决策树…</span>';
+  try{
+    const d=await(await fetch('/api/decision-tree?symbol='+(sym||'BTCUSDT'))).json();
+    if(d.error){box.innerHTML='<span class="red">'+esc(d.error)+'</span>';return;}
+    let h='';
+    (d.tree||[]).forEach((layer,li)=>{
+      h+=`<div class="calc" style="margin-left:${li*8}px"><div class="f">▸ ${esc(layer.layer)}</div>`;
+      (layer.items||[]).forEach(it=>{
+        const v=String(it.value||'');
+        const cls=/偏多|看多|多头|bullish/i.test(v)?'green':(/偏空|看空|空头|bearish|背离/i.test(v)?'red':'') ;
+        h+=`<div class="st"><span class="${cls}">${esc(it.name)}: ${esc(v)}</span>${it.note?` <span class="dim">(${esc(it.note)})</span>`:''}</div>`;
+      });
+      h+='</div>';
+    });
+    box.innerHTML=h+'<div class="dim" style="margin-top:6px">💡 每一层都是结论的依据，可追溯</div>';
+  }catch(e){box.innerHTML='<span class="red">'+e+'</span>';}
+}
+/* 校准曲线（canvas 散点） */
+async function loadCalibration(){
+  const box=document.getElementById('calBody');
+  box.innerHTML='<span class="dim">计算校准曲线…</span>';
+  try{
+    const d=await(await fetch('/api/calibration')).json();
+    if(!d.points||!d.points.length){box.innerHTML='<span class="dim">'+esc(d.note||'暂无数据')+'</span>';return;}
+    box.innerHTML=`<canvas id="calCanvas" style="width:100%;height:150px;background:var(--bg2);border:2px solid var(--line2)"></canvas>
+      <div class="dim" style="margin-top:6px">${esc(d.note||'')}</div>`;
+    const cv=document.getElementById('calCanvas');const c=cv.getContext('2d');
+    cv.width=cv.clientWidth*2;cv.height=cv.clientHeight*2;c.scale(2,2);
+    const Wc=cv.clientWidth,Hc=cv.clientHeight;
+    c.strokeStyle='#3a4477';c.lineWidth=1;
+    c.beginPath();c.moveTo(10,10);c.lineTo(Wc-10,Hc-10);c.stroke(); // 对角线
+    c.fillStyle='#7c6cff';
+    (d.points||[]).forEach(p=>{
+      const x=10+(p.predicted/100)*(Wc-20), y=Hc-10-(p.actual/100)*(Hc-20);
+      const r=3+Math.min(8,p.samples);
+      c.beginPath();c.arc(x,y,r,0,7);c.fill();
+    });
+  }catch(e){box.innerHTML='<span class="red">'+e+'</span>';}
+}
+/* 模拟账户 */
+async function loadShadow(){
+  const box=document.getElementById('shadowBody');
+  box.innerHTML='<span class="dim">加载模拟账户…</span>';
+  try{
+    const d=await(await fetch('/api/shadow')).json();
+    if(!d.equity||!d.equity.length){box.innerHTML='<span class="dim">暂无已验证预测（预测积累后自动生成权益曲线）</span>';return;}
+    const m=d.metrics||{};
+    box.innerHTML=`<canvas id="shadowCanvas" style="width:100%;height:140px;background:var(--bg2);border:2px solid var(--line2)"></canvas>
+      <div class="grid2" style="margin-top:8px">
+        <div class="kv"><span>总收益</span><b class="${m.total_return_pct>=0?'green':'red'}">${m.total_return_pct}%</b></div>
+        <div class="kv"><span>最大回撤</span><b class="red">${m.max_drawdown_pct}%</b></div>
+        <div class="kv"><span>Sharpe</span><b>${m.sharpe}</b></div>
+        <div class="kv"><span>已验证交易</span><b>${m.trades}</b></div></div>
+      <div class="dim" style="margin-top:6px">绿=比格建议执行 · 灰=BTC基准</div>`;
+    const cv=document.getElementById('shadowCanvas');const c=cv.getContext('2d');
+    cv.width=cv.clientWidth*2;cv.height=cv.clientHeight*2;c.scale(2,2);
+    const Wc=cv.clientWidth,Hc=cv.clientHeight;
+    const drawS=(pts,color)=>{ if(!pts||pts.length<2)return;
+      const vals=pts.map(p=>p.balance);const lo=Math.min(...vals),hi=Math.max(...vals);
+      c.strokeStyle=color;c.lineWidth=2;c.beginPath();
+      pts.forEach((p,i)=>{const x=i/(pts.length-1)*(Wc-20)+10,y=Hc-10-(p.balance-lo)/(hi-lo||1)*(Hc-20);
+        i?c.lineTo(x,y):c.moveTo(x,y);});c.stroke();};
+    drawS(d.benchmark,'#5a5e7e');drawS(d.equity,'#6ef57a');
+  }catch(e){box.innerHTML='<span class="red">'+e+'</span>';}
+}
+/* 周复盘 */
+async function loadWeekly(){
+  const box=document.getElementById('weeklyBody');
+  box.innerHTML='<span class="dim">生成周复盘…</span>';
+  try{
+    const d=await(await fetch('/api/review/weekly')).json();
+    if(!d.rate){box.innerHTML='<span class="dim">'+esc(d.note||'暂无数据')+'</span>';return;}
+    let h=`<div class="res" style="font-size:20px">${d.rate}% <span class="dim" style="font-size:11px">胜率（${d.total} 次）</span></div>
+      <div class="kv"><span>看多命中</span><b>${d.bull_rate!=null?d.bull_rate+'%':'—'}</b></div>
+      <div class="kv"><span>看空命中</span><b>${d.bear_rate!=null?d.bear_rate+'%':'—'}</b></div>`;
+    if(d.best&&d.best.length)h+='<h3 style="margin-top:10px">🟢 最佳判断</h3>'+d.best.map(b=>`<div class="kv"><span>${esc(b.symbol)}</span><b class="green">+${b.ret}%</b></div>`).join('');
+    if(d.worst&&d.worst.length)h+='<h3 style="margin-top:10px">🔴 最差判断</h3>'+d.worst.map(b=>`<div class="kv"><span>${esc(b.symbol)}</span><b class="red">${b.ret}%</b></div>`).join('');
+    (d.bias||[]).forEach(b=>h+=`<div class="st" style="color:var(--red);border-left-color:var(--red)">⚠️ ${esc(b)}</div>`);
+    (d.improvements||[]).forEach(i=>h+=`<div class="st" style="color:var(--green);border-left-color:var(--green)">✅ ${esc(i)}</div>`);
+    box.innerHTML=h;
+  }catch(e){box.innerHTML='<span class="red">'+e+'</span>';}
+}
+/* 板块热度 */
+async function loadSectors(){
+  const box=document.getElementById('sectorBody');
+  box.innerHTML='<span class="dim">加载板块热度…</span>';
+  try{
+    const d=await(await fetch('/api/sector-heat')).json();
+    const secs=d.sectors||[];
+    if(!secs.length){box.innerHTML='<span class="dim">暂无板块数据</span>';return;}
+    const max=Math.max(...secs.map(s=>Math.abs(s.heat)),1);
+    box.innerHTML=secs.map(s=>{
+      const w=Math.min(100,Math.abs(s.heat)/max*100);
+      const col=s.heat>=0?'var(--green)':'var(--red)';
+      return `<div style="margin:4px 0"><div style="display:flex;justify-content:space-between;font-size:11px">
+        <span>${esc(s.sector)} <span class="dim">(${s.count}币·${esc(s.leader)})</span></span>
+        <b style="color:${col}">${s.heat>0?'+':''}${s.heat}%</b></div>
+        <div class="barx"><i style="width:${w}%;background:${col};${s.heat<0?'right:0;left:auto':''}"></i></div></div>`;
+    }).join('');
+  }catch(e){box.innerHTML='<span class="red">'+e+'</span>';}
+}
+/* 报告中心 */
+async function loadReports(){
+  const box=document.getElementById('reportsBody');
+  box.innerHTML='<span class="dim">加载报告…</span>';
+  try{
+    const d=await(await fetch('/api/reports?limit=10')).json();
+    const rs=d.reports||[];
+    if(!rs.length){box.innerHTML='<span class="dim">暂无报告</span>';return;}
+    box.innerHTML=rs.map(r=>{
+      const t=new Date(r.ts*1000).toLocaleString('zh-CN',{hour12:false});
+      return `<div class="sig" onclick="showReport(${JSON.stringify(r).replace(/"/g,'&quot;')})">
+        <span class="dim">${t}</span><span style="flex:1"><b>${esc(r.title)}</b></span><span class="dim">📄</span></div>`;
+    }).join('');
+  }catch(e){box.innerHTML='<span class="red">'+e+'</span>';}
+}
+function showReport(r){
+  const box=document.getElementById('reportsBody');
+  box.innerHTML=`<div class="calc"><div class="f">${new Date(r.ts*1000).toLocaleString('zh-CN',{hour12:false})} · ${esc(r.symbol)}</div>
+    <div class="st">${esc(r.summary||'')}</div></div>
+    <button class="pbtn" onclick="loadReports()">◀ 返回报告列表</button>`;
+}
+/* --- 作战室（作战计划可视化，轻量秒开）+ 模拟账户 --- */
+async function facWarroom(){
+  const box=FC();
+  box.innerHTML='<div class="panel2"><h3>⚔ 作战室 · 风险计价器</h3><div id="warBody">制定作战计划…</div></div>'
+    +'<div class="panel2"><h3>🛡️ 智能风控 · Regime 自适应</h3><div id="riskBody">—</div></div>'
+    +'<div class="panel2"><h3>💰 模拟账户 · 建议验证</h3><div id="shadowBody">—</div></div>';
+  loadShadow();loadRisk();
+  try{
+    const d=await(await fetch('/api/plan?symbol=BTCUSDT')).json();
+    if(d.error){document.getElementById('warBody').innerHTML='<span class="red">'+esc(d.error)+'</span>';return;}
+    const p=d.plan;
+    const col=document.getElementById('warBody');
+    if(!p){col.innerHTML='<span class="dim">当前无明确方向（观望），无作战计划</span>';return;}
+    // 价格轴可视化
+    const vals=[p.stop,p.entry,p.target1,p.target2];
+    const lo=Math.min(...vals),hi=Math.max(...vals);
+    const W=100,H=220;
+    const Y=v=>H-(v-lo)/(hi-lo||1)*(H-20)-10;
+    let h=`<div style="position:relative;height:${H+30}px;border-left:2px solid var(--line2);margin:10px 0 0 40px">
+      <div style="position:absolute;left:-38px;top:${Y(p.stop)}px;font-size:10px;color:var(--red)">止损 ${p.stop}</div>
+      <div style="position:absolute;left:0;top:${Y(p.stop)}px;width:100%;border-top:2px dashed var(--red)"></div>
+      <div style="position:absolute;left:-38px;top:${Y(p.entry)}px;font-size:10px;color:#fff">入场 ${p.entry}</div>
+      <div style="position:absolute;left:0;top:${Y(p.entry)}px;width:100%;border-top:2px solid var(--cyan)"></div>
+      <div style="position:absolute;left:-38px;top:${Y(p.target1)}px;font-size:10px;color:var(--green)">目标1 ${p.target1}</div>
+      <div style="position:absolute;left:0;top:${Y(p.target1)}px;width:100%;border-top:2px dashed var(--green)"></div>
+      <div style="position:absolute;left:-38px;top:${Y(p.target2)}px;font-size:10px;color:var(--green)">目标2 ${p.target2}</div>
+      <div style="position:absolute;left:0;top:${Y(p.target2)}px;width:100%;border-top:2px dashed var(--green)"></div>
+      </div>`;
+    h+=`<div class="kv"><span>方向</span><b class="${p.direction==='bullish'?'green':'red'}">${p.direction==='bullish'?'做多':'做空'} · 置信 ${p.confidence}%</b></div>
+      <div class="kv"><span>风险</span><b>${p.risk_pct}%</b></div>
+      <div class="kv"><span>RR</span><b>${p.rr1} / ${p.rr2}</b></div>
+      <div class="kv"><span>建议仓位</span><b class="yellow">≤${p.position_pct}% 资金</b></div>
+      <div class="kv"><span>ATR 波动</span><b>${p.atr_pct}%</b></div>
+      ${p.notes?`<div class="int">${esc(p.notes)}</div>`:''}`;
+    col.innerHTML=h;
+  }catch(e){document.getElementById('warBody').innerHTML='<span class="red">'+e+'</span>';}
+}
+/* ================= 启动 ================= */
+buildBlds();buildDecor();
+fitWorld();window.addEventListener('resize',fitWorld);
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('zh-CN');},1000);
+refreshSenti();setInterval(refreshSenti,30000);
+refreshSrc();setInterval(refreshSrc,60000);
+renderDog('idle',0);requestAnimationFrame(loop);
+updateDayNight();setInterval(updateDayNight,60000);
+/* 比格屏幕坐标（缩放映射） */
+setInterval(()=>{
+  const wrap=document.getElementById('dogWrap');
+  const mapRect=mapEl.getBoundingClientRect();
+  wrap.style.left=(S.x-30)+'px';wrap.style.top=(S.y-80)+'px';
+},3000);
+/* 建筑外部缩略数据（30s 轮询 /api/facilities 一次全更新） */
+async function refreshMiniPanels(){
+  try{
+    const d=await(await fetch('/api/facilities')).json();
+    const set=(k,t)=>{const el=document.getElementById('mini-'+k);if(el)el.innerHTML=t;};
+    if(d.data)set('data',`<b>$${Number(d.data.price).toFixed(0)}</b> <span class="${d.data.chg>=0?'':'r'}">${d.data.chg>=0?'+':''}${d.data.chg}%</span>`);
+    if(d.obs)set('obs',`情绪 <b class="y">${d.obs.score}</b> ${d.obs.label}`);
+    if(d.council)set('council',`合议 <b class="${d.council.direction==='bullish'?'':'r'}">${d.council.direction}</b> ${d.council.agreement}%`);
+    if(d.war)set('war',`计划 <b class="${d.war.direction==='bullish'?'':'r'}">${d.war.direction}</b> ${d.war.confidence}%`);
+    if(d.radar)set('radar',`<b class="y">${d.radar.count}</b> 信号`);
+    if(d.hq)set('hq',`胜率 <b>${d.hq.win_rate||0}%</b>`);
+    set('screen',`<span class="c">BTC</span> <b>$${d.data?Number(d.data.price).toFixed(0):'--'}</b>`);
+    set('lab',`<span class="c">回测池就绪</span>`);
+  }catch(_){}
+}
+refreshMiniPanels();
+setInterval(refreshMiniPanels,30000);
+/* 遗留迷你数据轮询移除（已由 facilities 覆盖） */
+</script>
+</body>
+</html>
