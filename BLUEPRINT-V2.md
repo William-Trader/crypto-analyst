@@ -543,7 +543,7 @@ shadow_equity(account, ts, balance)
 - 容器化：Dockerfile（python:3.11-slim）→ 一键部署/迁移
 - CI：`python -m compileall` + 核心单测（指标数值、回测口径、API 契约）
 - 版本：语义化版本 + `schema_version` 迁移脚本
-- 环境：dev（本地）/ prod（小馨服务器）双环境，配置分离
+- 环境：dev（本地）/ prod（生产服务器）双环境，配置分离
 
 ---
 
@@ -899,7 +899,7 @@ William: "持仓 BTC 1个 成本 78000"
 |---|---|
 | 采集器挂 | `systemctl restart crypto-collector` → 看日志 → 补数据（backfill） |
 | Web 挂 | `systemctl restart crypto-web` → 查 journalctl 尾部 |
-| QQ 通道断 | 小馨 OpenClaw `openclaw status --deep` → 重启 gateway |
+| QQ 通道断 | OpenClaw `openclaw status --deep` → 重启 gateway |
 | LLM 全失败 | 检查 DeepSeek key/余额 → 临时降级规则模式 |
 | 数据错乱 | 检查 collect_health 失败率 → 定位源 → 手动 backfill |
 

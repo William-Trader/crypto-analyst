@@ -14,7 +14,7 @@ python3 -m analyst.pipeline BTCUSDT     # CLI 深度分析
 python3 -m web.app                      # 前端驾驶舱 :3000
 ```
 
-## 部署（小馨服务器）
+## 部署（生产服务器）
 ```bash
 bash deploy/deploy.sh
 ```

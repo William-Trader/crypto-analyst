@@ -2,9 +2,9 @@
 
 ## 状态：已归档（服务器部署已清理，本地代码保留为资产）
 
-- 服务器（小馨 YOUR_SERVER_IP）上的 crypto-analyst 部署已于 2026-09-02 13:00 清理：
+- 服务器（YOUR_SERVER_IP）上的 crypto-analyst 部署已于 2026-09-02 13:00 清理：
   crypto-collector/crypto-web/crypto-qqbot 服务已删、/home/ubuntu/crypto-analyst 已删、晨报 crontab 已清
-- 保留：小馨 OpenClaw（龙虾，18789）+ QQ 通道（appId YOUR_APP_ID，比格机器人由 OpenClaw 代理）
+- 保留：OpenClaw（龙虾，18789）+ QQ 通道（appId YOUR_APP_ID，比格机器人由 OpenClaw 代理）
 - 本地代码保留在本目录，可作为资产复用
 
 ## 资产清单
