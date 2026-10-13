@@ -1,4 +1,4 @@
-# crypto-analyst 部署脚本（小馨服务器 YOUR_SERVER_IP）
+# crypto-analyst 部署脚本（生产服务器 YOUR_SERVER_IP）
 # 用法: bash deploy/deploy.sh
 set -euo pipefail
 
